@@ -1,0 +1,32 @@
+# Theorems
+
+clm
+cor
+fct
+lem
+thm
+pos
+pr
+theorem
+lemma
+
+# Proofs
+
+proof
+
+# Refs
+
+ref
+
+# Labels
+
+label
+llabel
+
+# Files
+
+C:/Users/Owner/Dropbox/Math/Combinatorics/Probabilistic method/noise_sensitivity.tex
+
+# Aux
+
+C:/Users/Owner/Dropbox/Math/Combinatorics/Probabilistic method/noise_sensitivity.aux
