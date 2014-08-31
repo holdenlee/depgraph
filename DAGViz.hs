@@ -17,8 +17,6 @@ import qualified Data.List.Ordered
 import Data.Tree
 import qualified Data.List
 import qualified Data.Map.Strict as Map
-import Search
-import MathParser
 import qualified Data.Hashable
 import Data.Monoid
 import qualified Data.MultiMap as MM

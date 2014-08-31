@@ -1,0 +1,10 @@
+# Complied source #
+###################
+
+*.hi
+*.o
+
+# Miscellaneous files #
+#######################
+
+*.*~

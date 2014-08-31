@@ -18,7 +18,6 @@ import qualified Data.List.Ordered
 import Data.Tree
 import qualified Data.List
 import qualified Data.Map.Strict as Map
-import Search
 import Text.ParserCombinators.Parsec
 import Data.Char
 import System.IO.Unsafe
@@ -28,7 +27,6 @@ import qualified Text.Parsec.Token as P
 import Text.Parsec.Language (emptyDef)
 
 import Utilities
-import DAGViz
 
 lexer :: P.TokenParser ()
 lexer  = P.makeTokenParser (emptyDef)

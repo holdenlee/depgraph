@@ -8,7 +8,7 @@
  -XPolyKinds
 #-}
 
-module LatexDepGraph where
+module Main where
 import System.Environment   
 import System.Directory  
 import System.IO  
@@ -18,7 +18,6 @@ import qualified Data.List.Ordered
 import Data.Tree
 import qualified Data.List
 import qualified Data.Map.Strict as Map
-import Search
 import Text.ParserCombinators.Parsec
 import Data.Char
 import System.IO.Unsafe
@@ -28,9 +27,8 @@ import qualified Text.Parsec.Token as P
 import Text.Parsec.Language (emptyDef)
 
 import Utilities
-import DAGViz
 import ParseUtilities
-
+import DAGViz
 
 lexer :: P.TokenParser ()
 lexer  = P.makeTokenParser (emptyDef)
@@ -273,6 +271,13 @@ latexToDepGraph inputF outputF =
         let dot = defaultDotC2 (\_ l -> showThm l pi2) (\_ l -> lookupSF l "file" pi) graph
         writeFile outputF (dot)
 --should have safety?
+
+main:: IO ()
+main = do
+  args <- getArgs
+  let inputF = args !! 0
+  let outputF = args !! 1
+  latexToDepGraph inputF outputF
 
 test::IO ()
 test = 
