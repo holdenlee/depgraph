@@ -8,3 +8,7 @@
 #######################
 
 *.*~
+*.pdf
+header2.exe
+output.hs
+input.txt

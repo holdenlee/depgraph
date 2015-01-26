@@ -9,6 +9,8 @@ pos
 pr
 theorem
 lemma
+corollary
+proposition
 
 # Proofs
 
