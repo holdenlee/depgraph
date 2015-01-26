@@ -47,9 +47,9 @@ If you want theorems to not show up or be referenced, then in LaTeX define alter
 
 # Todo #
 
-* Fix the reading of "]" (so that it will read something like \begin{thm}[\cite[Theorem 1]{ref}] correctly).
 * Combine with dot2tex to allow it to display math.
 * Create an automatic process to make dependency graphs for each section/chapter and put then in the respective sections/chapters, with hyperlinks to the theorems. 
 * Adapt the graph visualization to section dependencies (leitfaden).
+* Integrate with D3 visualization as in the Stacks Project.
 
 See also http://thmlink.blogspot.com/.
