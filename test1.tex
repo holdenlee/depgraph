@@ -1,0 +1,59 @@
+\def\filepath{C:/Users/Owner/Dropbox/Math/templates}
+
+\input{\filepath/packages_article.tex}
+\input{\filepath/theorems_with_boxes.tex}
+\input{\filepath/macros.tex}
+\input{\filepath/formatting.tex}
+%\input{\filepath/other.tex}
+
+%\def\name{NAME}
+
+%\input{\filepath/titlepage.tex}
+
+\pagestyle{fancy}
+%\addtolength{\headwidth}{\marginparsep} %these change header-rule width
+%\addtolength{\headwidth}{\marginparwidth}
+\lhead{TITLE 1}
+\chead{} 
+\rhead{TITLE 2} 
+\lfoot{} 
+\cfoot{\thepage} 
+\rfoot{} 
+\renewcommand{\headrulewidth}{.3pt} 
+%\renewcommand{\footrulewidth}{.3pt}
+\setlength\voffset{0in}
+\setlength\textheight{648pt}
+
+\begin{document}
+\section{Topic}
+
+\begin{thm}[Main theorem]
+Riemann hypothesis holds!
+\label{thm:1}
+\end{thm}
+
+\begin{lem}[First lemma]
+...\label{lem:1}
+\end{lem}
+
+\begin{lem}[Second lemma]\label{lem:2}
+...
+\end{lem}
+\begin{proof}
+Use Lemma~\ref{lem:1}
+\end{proof}
+
+\begin{lem}[Third lemma]
+...\label{lem:3}
+\end{lem}
+
+\begin{proof}[Proof of Theorem~\ref{thm:1}]
+Use \ref{lem:2} and \ref{lem:3}
+\end{proof}
+
+
+%\input{chapters/1.tex}
+ 
+%\bibliographystyle{plain}
+%\bibliography{refs}
+\end{document}

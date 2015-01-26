@@ -4,11 +4,23 @@
 *.hi
 *.o
 
+# LaTeX related #
+#################
+
+latex.txt
+*.tex
+!test1.tex
+*.aux
+*.idx
+*.log
+*.nlo
+*.out
+*.synctex.gz
+
 # Miscellaneous files #
 #######################
 
-*.*~
-*.tex
+*~
 *.pdf
 header2.exe
 output.hs
