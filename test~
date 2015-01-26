@@ -1,0 +1,4 @@
+#!/bin/bash
+
+ghc --make -o depgraph LatexDepGraph.hs
+./depgraph input.txt output.dot

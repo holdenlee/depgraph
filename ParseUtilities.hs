@@ -126,8 +126,8 @@ fieldsParser pi =
       <|> do{ anyToken; fieldsParser pi}
 
 -- -> (String -> Parser ())
-readFields:: String  -> Map.Map String [String]
-readFields contents = MM.toMap $ deps $ justRight (parse (fieldsParser emptyPI) "error" contents)
+readFields:: String  -> MM.MultiMap String String
+readFields contents = deps $ justRight (parse (fieldsParser emptyPI) "error" contents)
   
 
 chain:: [String] -> a -> (a -> String -> a) -> (a -> Parser a) -> IO a
@@ -142,6 +142,7 @@ chainPI:: [String] -> ProgramParser -> IO ProgramInfo
 chainPI inputFs parser = chain inputFs emptyPI (\pi fileName -> pi{currentFile = fileName}) parser
 
 --unsafe
+--AAAAGGGGHHHH! Bad code! Don't use!
 getFile::String -> String
 getFile name = unsafePerformIO (readFile name)
 

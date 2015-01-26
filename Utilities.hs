@@ -8,16 +8,15 @@
  -XPolyKinds
 #-}
 
-module Utilities ((-:), doIf, removeJust, removeJustWithDefault, justRight, lookup2, insertMultiple, loopUntilFail, loopUntil, stopBefore, listUpdate, listUpdateFun, replaceSublist, filterJust, filterZip, cofilter, lookupList, lookupList2, mlookup, (*>), tryWithDefault, foldIterate, foldIterate2, sublist) where
+module Utilities  where
 import System.Environment
 import Control.Monad
-import Data.Graph.Inductive
-import qualified Data.List.Ordered
 import Data.Tree
 import qualified Data.List
 import qualified Data.Map.Strict as Map
 import qualified Data.Hashable
 import Data.Maybe
+import Debug.Trace
 
 --combinators
 (-:):: a -> (a -> b) -> b
@@ -25,6 +24,17 @@ x -: f = f x
 
 doIf :: Bool -> (a -> a) -> (a -> a)
 doIf p f = (\x -> if p then f x else x)
+
+ifelselist:: [(Bool, a)] -> a -> a
+ifelselist li y = 
+  case li of 
+    [] -> y
+    ((b,x):li2) -> if b then x else ifelselist li2 y
+
+iflist :: [(Bool, a)] -> a
+iflist li = 
+  case li of 
+    ((b,x):li2) -> if b then x else iflist li2
 
 loopUntilFail :: (a -> Maybe a) -> a -> a
 loopUntilFail f x = 
@@ -73,10 +83,10 @@ listUpdatesFun p f li = map (\(i,x) -> doIf (p i) f x) (zip [1..] li)
 replaceSublist :: Int -> Int -> [a] -> [a] -> [a]
 replaceSublist m n li li2 =
       let 
-        front = take m li
-        back = drop (max m n) li
+        front = take m li2
+        back = drop (max m n) li2
       in
-        front ++ li2 ++ back
+        front ++ li ++ back
 
 listUpdate :: Int -> a -> [a] -> [a]
 listUpdate n x li = replaceSublist n (n+1) [x] li
@@ -126,6 +136,28 @@ foldIterate f as x = foldl (flip f) x as
 foldIterate2:: (a->b->c->c)->[a]->[b]->c->c
 foldIterate2 f as bs x = foldl (\y -> \(xa, xb) -> f xa xb y) x (zip as bs)
 
+--for :: a -> (a -> a) -> (a -> Bool) -> (a -> a) -> a
+
 sublist :: Int -> Int -> [a] -> [a]
 sublist m n ls =  take (n-m) . drop m $ ls
 -- >=m, <n
+
+map2 :: (a -> b -> c) -> [a] -> [b] -> [c]
+map2 = zipWith
+
+infixr 0 <|
+(<|) :: (a -> b) -> a -> b
+(<|) = ($)
+
+infixl 0 |>
+(|>) :: a -> (a -> b) -> b
+x |> f = f x
+
+mapSnd :: (a -> b) -> (c, a) -> (c,b)
+mapSnd f (x,y) = (x, f y)
+
+mapFst :: (a -> b) -> (a,c) -> (b,c)
+mapFst f (x,y) = (f x, y)
+
+--debug x y = x
+--debug = flip trace

@@ -12,23 +12,32 @@ module Main where
 import System.Environment   
 import System.Directory  
 import System.IO  
+
 import Control.Monad
-import Data.Graph.Inductive
-import qualified Data.List.Ordered
-import Data.Tree
-import qualified Data.List
-import qualified Data.Map.Strict as Map
-import Text.ParserCombinators.Parsec
-import Data.Char
-import System.IO.Unsafe
-import qualified Data.MultiMap as MM
+
 import Data.Maybe
+import Data.Monoid
+import Data.Graph.Inductive
+import qualified Data.Map.Strict as M
+import qualified Data.MultiMap as MM
+
+import Text.ParserCombinators.Parsec
 import qualified Text.Parsec.Token as P
 import Text.Parsec.Language (emptyDef)
+import Text.Parsec.Error
+
+import Text.LaTeX.Base
+import Text.LaTeX.Base.Render
+import Text.LaTeX.Base.Parser
+import Text.LaTeX.Base.Syntax
+
+import Debug.Trace
 
 import Utilities
 import ParseUtilities
 import DAGViz
+
+debug = flip trace
 
 lexer :: P.TokenParser ()
 lexer  = P.makeTokenParser (emptyDef)
@@ -43,175 +52,143 @@ identifier= P.identifier lexer
 reserved  = P.reserved lexer
 reservedOp= P.reservedOp lexer
 
-endWith:: String -> Parser ()
-endWith str = 
-  try (do {
-    symbol str;
-    return ()
-  }) <|> do {
-    identifier;
-    endWith str
-  } <|> do {
-    anyToken;
-    endWith str
-  }
+texSeqs :: [LaTeX] -> LaTeX
+texSeqs = foldl mappend TeXEmpty
 
-endWithAndLookOut:: String -> Parser a -> a -> Parser a
-endWithAndLookOut end par res = 
-  try (do {
-    symbol end;
-    return res
-  }) <|> try (do {
-    res2 <- par;
-    endWithAndLookOut end par res2
-  }) <|> do {
-    identifier;
-    endWithAndLookOut end par res
-  } <|> do {
-    anyToken;
-    endWithAndLookOut end par res
-  }
+--takes care of bug where quotes appear
+stripQuotes :: String -> String
+stripQuotes str = reverse $ tail $ reverse $ tail str
 
-oneOfSyms:: [String] -> Parser String
-oneOfSyms strs = 
-  foldl1 (<|>) (map (try.symbol) strs) 
-  --do
-    --expr <- identifier
-    --if env `elem` envs then fail "" else --else do nothing
-    
-latexEnvParserInt:: String -> [String] -> Parser String
-latexEnvParserInt env labs = endWithAndLookOut ("\\end{" ++ env ++ "}") par ""
-  where 
-    par = do {
-      string "\\";
-      oneOfSyms labs;
-      string "{";
-      expr <- many1 (noneOf "}");
-      symbol "}";
-      return expr
-    }
+showLatex :: LaTeX -> String
+showLatex = stripQuotes . show . render
+
+argToLatex :: TeXArg -> LaTeX
+argToLatex ta = 
+    case ta of 
+      FixArg latex -> latex
+      OptArg latex -> latex	
+      MOptArg latexs -> texSeqs latexs	
+      SymArg latex -> latex	
+      MSymArg latexs -> texSeqs latexs
+
+argsToLatex :: [TeXArg] -> LaTeX
+argsToLatex tas = texSeqs $ map argToLatex tas
+
+{-| 
+  Given a section of tex, find the string inside \label{...}.
+  The map should have the entry ("Labels", [<list of label keywords>]).
+  Typically, the label keyword is just "label"
+  It will use the first occurrence of label.
+-}
+findLabel :: [String] -> LaTeX -> String
+findLabel labs latex =
+    case latex of
+      TeXRaw txt -> ""
+      TeXComm str args -> 
+          if str `elem` labs 
+             then showLatex $ argsToLatex args
+             else findLabel labs (argsToLatex args)
+      TeXCommS str -> ""	
+      TeXEnv str args latex2 -> ""	
+      TeXMath mt latex2 -> ""
+      TeXLineBreak mmeas bool -> ""	
+      TeXBraces latex2 -> findLabel labs latex2
+      TeXComment comment -> ""
+      TeXSeq latex1 latex2 -> 
+          let 
+              ans1 = findLabel labs latex1
+              ans2 = findLabel labs latex2
+          in
+            if ans1 == "" then ans2 else ans1
+      TeXEmpty -> ""
+
+{-| 
+  Given a section of tex, find all strings inside \ref{...}.
+  The map should have the entry ("Refs", [<list of label keywords>]).
+  Typically, the refs keyword is just "ref".
+-}
+findRefs :: [String] -> LaTeX -> [String]
+findRefs refs latex =
+    case latex of
+      TeXRaw txt -> []
+      TeXComm str args -> 
+          if str `elem` refs
+             then [showLatex $ argsToLatex args]
+             else findRefs refs (argsToLatex args)
+      TeXCommS str -> []	
+      TeXEnv str args latex2 -> findRefs refs latex2	
+      TeXMath mt latex2 -> findRefs refs latex2
+      TeXLineBreak mmeas bool -> []	
+      TeXBraces latex2 -> findRefs refs latex2
+      TeXComment comment -> []
+      TeXSeq latex1 latex2 -> (findRefs refs latex1) ++ (findRefs refs latex2)
+      TeXEmpty -> []
+
+{-|
+  Given a multimap of Theorems, Proofs, Refs, Labels names, a section of latex, and ProgramInfo, parses the latex into the ProgramInfo.
+-}
+latexToPI' :: MM.MultiMap String String -> LaTeX -> ProgramInfo -> ProgramInfo
+latexToPI' mm latex pi = 
+    case latex of
+      TeXRaw txt -> pi 
+                    --skip over raw TeX
+      TeXComm str args -> latexToPI' mm (argsToLatex args) pi
+      TeXCommS str -> pi	
+      TeXEnv str args latex2 -> ifelselist
+                                [(str `elem` (MM.lookup "Theorems" mm), let {
+           lab = findLabel (MM.lookup "Labels" mm) latex2;
+           name = if length args > 0 
+                    then 
+                        case args!!0 of 
+                          OptArg n -> showLatex n
+                    else
+                        ""
+                                                                    }
+                                                                    in pi{current = lab} |> insertSF "type" str |> insertField lab |> doIf (name /= "") (insertSF "name" name)),
+                                 (str `elem` (MM.lookup "Proofs" mm), pi{current = if length args > 0 
+                                                                                then
+                                                                                    findLabel (MM.lookup "Refs" mm) (argsToLatex args)
+                                                                                else
+                                                                                    current pi}|> foldIterate insertDep (findRefs (MM.lookup "Refs" mm) latex2))]
+               (latexToPI' mm latex2 pi)
+      TeXMath mt latex2 -> pi
+      TeXLineBreak mmeas bool -> pi	
+      TeXBraces latex2 -> latexToPI' mm latex2 pi	
+      TeXComment comment -> pi
+      TeXSeq latex1 latex2 -> latexToPI' mm latex2 (latexToPI' mm latex1 pi)	
+      TeXEmpty -> pi
+
+latexToPI :: MM.MultiMap String String -> LaTeX -> ProgramInfo
+latexToPI mm latex = latexToPI' mm latex emptyPI
+
 {-
-  try (do {
-    symbol ("\\end{" ++ env ++ "}");
-    return str;
-  }) <|> (try(do {
-    string "\\";
-    oneOfSyms labs;
-    string "{";
-    expr <- many1 (noneOf "}");
-    symbol "}";
-    latexEnvParserInt env labs expr
-  })) <|> do {
-    identifier;
-    latexEnvParserInt env labs str
-  } <|> do {
-    anyToken;
-    latexEnvParserInt env labs str
-  }
-  -}
+latexToPI :: LaTeX -> ProgramInfo -> ProgramInfo
+latexToPI latex pi = 
+    case latex of
+      TeXRaw txt -> pi
+      TeXComm str args -> pi
+      TeXCommS str -> pi	
+      TeXEnv str args latex2 -> pi	
+      TeXMath mt latex2 -> pi
+      TeXLineBreak mmeas bool -> pi	
+      TeXBraces latex2 -> pi	
+      TeXComment comment -> pi
+      TeXSeq latex1 latex2 -> pi	
+      TeXEmpty -> pi
+-}
 
-latexEnvParser:: [String] -> [String] -> ProgramParser
-latexEnvParser envs labs pi = 
-  do
-    --parse \begin{thm}
-    symbol ("\\begin{")
-    env <- oneOfSyms envs
-    symbol "}"
-    --parse [label]
-    name <- option Nothing (try(do {
-		symbol "[";
-		expr <- many1 (noneOf "]");
-		symbol "]";
-		return (Just expr)}));
-    many (oneOf " \n");
-    --parse \label{...} currently it has to be at the beginning
-    {-string "\\";
-    oneOfSyms labs;
-    string "{";
-    expr <- many1 (noneOf "}");
-    symbol "}";
-    let ref = expr-}    
-    ref <- latexEnvParserInt env labs;
-    --problem with the following: label could be anywhere.
-    {-ref <- option "unlabeled" (try(do {
-                string "\\";
-                oneOfSyms labs;
-                string "{";
-                expr <- many1 (noneOf "}");
-                symbol "}";
-                return expr}))-}
-    --parse \end{thm}
-    --endWith ("\\end{" ++ env ++ "}")
-    return (pi{current = ref}
-           -: insertSF "type" env
-           -: insertField ref
-           -: doIf (isJust name) (insertSF "name" (removeJust name)))
+parseLaTeX2 :: String -> LaTeX
+parseLaTeX2 str = 
+    case parseLaTeX $ fromString str of
+      Left _ -> TeXEmpty
+      Right t -> t
 
-latexProofParser:: [String] -> [String] -> ProgramParser
-latexProofParser proofs refs pi =
-  do 
-    symbol ("\\begin{") --parse \begin{proof}
-    env <- oneOfSyms proofs
-    symbol "}"
-    proofOf <- ((try (latexProofBrackets refs (current pi))) <|> (return (current pi)))
-    let pi2 = pi{current = proofOf}
-    latexProofParserInt env refs pi2
-
-latexProofBrackets:: [String] -> String -> Parser String
-latexProofBrackets refs cur = 
- do
-  symbol "["
-  endWithAndLookOut "]" par cur 
- where par = do {
-      string "\\";
-      oneOfSyms refs; --use another ref?
-      string "{";
-      expr <- many1 (noneOf "}");
-      symbol "}";
-      return expr}
-
---use endBy?
-latexProofParserInt:: String -> [String] -> ProgramParser
-latexProofParserInt env refs pi = 
-  --parse \end{proof} 
-  do {try (symbol ("\\end{" ++ env ++ "}")); return pi}
-    <|> 
-    --parse \ref{...}
-    try (do {string "\\"; 
-        oneOfSyms refs; 
-        string "{";
-        expr <- many1 (noneOf "}");
-        symbol "}";
-        latexProofParserInt env refs (insertDep expr pi)})
-    <|> do {
-      identifier;
-      latexProofParserInt env refs pi
-    } <|> do {
-      anyToken;
-      latexProofParserInt env refs pi
-    }    
-    
-
---followed by?
---parser for header: tries to parse a Dependency Unit header. Return PI with new state and info if successful, fail otherwise.
---parser for body: tries to parse the inside of a Dep Unit body. Adds dependency fields.
-depParser:: ProgramParser -> ProgramParser -> ProgramParser
-depParser headerP bodyP pi = 
-  --do{pi2 <- headerP pi; return pi2}
-    do {eof; return pi}
-      <|> (try (do{pi2 <- headerP pi; depParser headerP bodyP pi2}))
-      <|> (try (do{pi2 <- bodyP pi; depParser headerP bodyP pi2}))
-      <|> do{ identifier;  (depParser headerP bodyP pi)}
-      <|> do{ anyToken; (depParser headerP bodyP pi)}
-
--- # Theorems, Labels, Refs, Proofs, Files
-latexDepParser::Map.Map String [String] -> ProgramParser
-latexDepParser mp = 
-  let 
-    [envs, labs, proofs, refs] = map (tryWithDefault (flip Map.lookup mp) []) ["Theorems", "Labels", "Proofs", "Refs"] 
-  in
-    depParser (latexEnvParser envs labs) (latexProofParser proofs refs)
---envs labs proof refs
+chainPI2:: [String] -> (LaTeX -> ProgramInfo -> ProgramInfo) -> IO ProgramInfo 
+chainPI2 inputFs parser = 
+    do
+      handles <- sequence (fmap (\x -> openFile x ReadMode) inputFs)
+      contents <- sequence (map ((fmap parseLaTeX2) . hGetContents) handles)
+      return $ foldl (\pi (fileName, latex) -> parser latex (pi{currentFile = fileName})) emptyPI (zip inputFs contents)
 
 latexAuxParser::ProgramParser
 latexAuxParser pi =
@@ -233,20 +210,22 @@ getDepGraph pi =
   let 
     mp = deps pi
     ks = fields pi --MM.keys mp
-    kNums = Map.fromList (zip ks [1..])
+    kNums = M.fromList (zip ks [1..])
     --first lookup the key in the map to find dependencies
     --then find the num associated to each key.
-    
+    --adjs::Int -> [((), Int)]
     adjs = (\k-> 
       let 
         num = lookup2 k kNums
         ds = MM.lookup k mp
-        nums = filterJust (fmap (\kd -> (Map.lookup kd kNums)) ds)
+        nums = filterJust (fmap (\kd -> (M.lookup kd kNums)) ds)
       in
         fmap (\n -> ((), n)) nums) 
-    ctxts = fmap (\k -> (adjs k, lookup2 k kNums, k, [])) ks
+    --ctxts = fmap (\k -> (adjs k `debug` (show $ adjs k), lookup2 k kNums, k, [])) ks
   in 
-    buildGr ctxts
+    mkGraph (zip [1..] ks) (concat $ map (\k -> map (\(x,y) -> (y,lookup2 k kNums,x)) (adjs k)) ks)
+    --This has a bug where it won't make edges that reference nodes earlier in the list.
+    --buildGr ctxts `debug` (show ctxts)
  
 --should separate out the IO...
 --(Gr String ())
@@ -257,16 +236,17 @@ latexToDepGraph inputF outputF =
   handle <- openFile inputF ReadMode
   contents <- hGetContents handle
   let fields = readFields contents
-  let inputFs = lookup2 "Files" fields
-  --removeJustWithDefult (Map.lookup "Files" fields) []
-  let auxF = (lookup2 "Aux" fields) !! 0
+  let inputFs = MM.lookup "Files" fields
+  --removeJustWithDefult (M.lookup "Files" fields) []
+  let auxF = (MM.lookup "Aux" fields) !! 0
   auxHandle <- openFile auxF ReadMode
   auxContents <- hGetContents auxHandle
-  pi <- chainPI inputFs (latexDepParser fields)
+  pi <- chainPI2 inputFs (latexToPI' fields)
   case (parse (latexAuxParser pi) "error" auxContents) of 
     Left error -> putStrLn (show error)
     Right pi2 ->
       do
+        putStrLn $ show pi2
         let graph = getDepGraph pi2
         let dot = defaultDotC2 (\_ l -> showThm l pi2) (\_ l -> lookupSF l "file" pi) graph
         writeFile outputF (dot)
@@ -279,6 +259,11 @@ main = do
   let outputF = args !! 1
   latexToDepGraph inputF outputF
 
+test2:: IO ()
+test2 = do
+  putStrLn $ findLabel ["ref"] (argsToLatex  [OptArg (TeXSeq (TeXRaw $ fromString "Proof of Theorem~") (TeXComm "ref" [FixArg (TeXRaw $ fromString "thm:1")]))])
+
+{-
 test::IO ()
 test = 
   do
@@ -288,7 +273,8 @@ test =
     putStrLn (show pi)
     let pi1 = justRight (parse (latexEnvParser ["thm"] ["label"] pi) "error" (getFile "test1.tex"))
     putStrLn (show pi1)
-    let [envs, labs, proofs, refs] = map (tryWithDefault (flip Map.lookup fields) []) ["Theorems", "Labels", "Proofs", "Refs"] 
+    let [envs, labs, proofs, refs] = map (tryWithDefault (flip M.lookup fields) []) ["Theorems", "Labels", "Proofs", "Refs"] 
     putStrLn (show [envs, labs, proofs, refs])
     let pi2 = (parse (latexDepParser fields pi) "error" (getFile "test1.tex"))
     putStrLn (show pi2)
+-}

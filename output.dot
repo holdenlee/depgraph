@@ -1,0 +1,9 @@
+digraph {
+    1 [label="lem 1.4: Third lemma"];
+    2 [label="lem 1.3: Second lemma"];
+    3 [label="lem 1.2: First lemma"];
+    4 [label="thm 1.1: Main theorem"];
+    1 -> 4 [label=""];
+    2 -> 4 [label=""];
+    3 -> 2 [label=""];
+}

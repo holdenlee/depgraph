@@ -1,0 +1,5 @@
+#!/bin/bash
+
+ghc --make -o depgraph LatexDepGraph.hs
+./depgraph input.txt output.dot
+dot.exe -Tpdf output.dot > output.pdf
