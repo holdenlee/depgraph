@@ -53,11 +53,19 @@ If you want theorems to not show up or be referenced, then in LaTeX define alter
 
 # Todo #
 
+Smart parsing
 * Have the program parse "\input{...}" directly so that listing files is unnecessary.
+* Automatically link up "corollaries" to the theorem immediately before.
+
+Display
 * Combine with dot2tex to allow it to display math.
+* Integrate with D3 visualization as in the Stacks Project.
+* Allow alternate proofs of theorems by displaying edges corresponding to different proofs with different colors/styles.
+* Allow edge labels.
+
+More options
 * In a file with multiple sections/chapters, group together the theorems in each section/chapter, and have an option for drawing the graph for a specific set of sections/chapters.
 * Create an automatic process to make dependency graphs for each section/chapter and put then in the respective sections/chapters, with hyperlinks to the theorems.
 * Adapt the graph visualization to section dependencies (leitfaden).
-* Integrate with D3 visualization as in the Stacks Project.
 
 See also http://thmlink.blogspot.com/.
