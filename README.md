@@ -53,6 +53,7 @@ If you want theorems to not show up or be referenced, then in LaTeX define alter
 
 # Todo #
 
+* Have the program parse "\input{...}" directly so that listing files is unnecessary.
 * Combine with dot2tex to allow it to display math.
 * In a file with multiple sections/chapters, group together the theorems in each section/chapter, and have an option for drawing the graph for a specific set of sections/chapters.
 * Create an automatic process to make dependency graphs for each section/chapter and put then in the respective sections/chapters, with hyperlinks to the theorems.
