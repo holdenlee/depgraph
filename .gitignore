@@ -23,6 +23,8 @@ latex.txt
 *#
 *~
 *.pdf
+*.dot
+!test1.dot
 header2.exe
 output.hs
 input.txt

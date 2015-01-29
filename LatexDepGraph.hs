@@ -246,7 +246,7 @@ latexToDepGraph inputF outputF =
     Left error -> putStrLn (show error)
     Right pi2 ->
       do
-        putStrLn $ show pi2
+        --putStrLn $ show pi2
         let graph = getDepGraph pi2
         let dot = defaultDotC2 (\_ l -> showThm l pi2) (\_ l -> lookupSF l "file" pi) graph
         writeFile outputF (dot)

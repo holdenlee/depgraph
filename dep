@@ -1,0 +1,7 @@
+#!/bin/bash
+
+in=${1-input}
+out=${2-output}
+
+./depgraph $in.txt $out.dot
+dot.exe -Tpdf $out.dot > $out.pdf

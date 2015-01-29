@@ -1,0 +1,38 @@
+# Theorems
+
+clm
+cor
+fct
+lem
+thm
+pos
+pr
+theorem
+lemma
+corollary
+proposition
+
+# Proofs
+
+proof
+
+# Refs
+
+ref
+
+# Labels
+
+label
+llabel
+
+# Files
+
+C:/Users/Owner/Dropbox/Math/Computation/Computability and computational complexity/dvir/fourier/intro.tex
+C:/Users/Owner/Dropbox/Math/Computation/Computability and computational complexity/dvir/fourier/notation.tex
+C:/Users/Owner/Dropbox/Math/Computation/Computability and computational complexity/dvir/fourier/fourierproof3.tex
+C:/Users/Owner/Dropbox/Math/Computation/Computability and computational complexity/dvir/fourier/newproof.tex
+C:/Users/Owner/Dropbox/Math/Computation/Computability and computational complexity/dvir/fourier/conclusion.tex
+
+# Aux
+
+C:/Users/Owner/Dropbox/Math/Computation/Computability and computational complexity/dvir/fourier/fourier3.aux

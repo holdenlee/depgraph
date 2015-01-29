@@ -18,7 +18,13 @@ Run
     ./depgraph input.txt output.dot
     dot.exe -Tpdf output.dot > output.pdf
 
-to make the pdf. (You must have dot installed: http://www.graphviz.org/.) See dot documentation for alternate options in making the graph from the dot file.
+to make the pdf. (You must have dot installed: http://www.graphviz.org/. Make sure dot.exe is on your file path.) See dot documentation for alternate options in making the graph from the dot file.
+
+For convenience, the above two lines are in the script "dep". You can run the above more simply as
+
+	./ dep input output
+
+If no arguments are given, it will default to "input" and "output".
 
 # What it does #
 
@@ -48,7 +54,8 @@ If you want theorems to not show up or be referenced, then in LaTeX define alter
 # Todo #
 
 * Combine with dot2tex to allow it to display math.
-* Create an automatic process to make dependency graphs for each section/chapter and put then in the respective sections/chapters, with hyperlinks to the theorems. 
+* In a file with multiple sections/chapters, group together the theorems in each section/chapter, and have an option for drawing the graph for a specific set of sections/chapters.
+* Create an automatic process to make dependency graphs for each section/chapter and put then in the respective sections/chapters, with hyperlinks to the theorems.
 * Adapt the graph visualization to section dependencies (leitfaden).
 * Integrate with D3 visualization as in the Stacks Project.
 
