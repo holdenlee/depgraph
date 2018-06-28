@@ -1,0 +1,34 @@
+# Theorems
+
+clm
+cor
+fct
+lem
+thm
+pos
+pr
+theorem
+lemma
+corollary
+proposition
+
+# Proofs
+
+proof
+
+# Refs
+
+ref
+
+# Labels
+
+label
+llabel
+
+# Files
+
+test1.tex
+
+# Aux
+
+test1.aux
